@@ -170,19 +170,22 @@ class MinimaxPlayer(IsolationPlayer):
 
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
-        best_move = (-1, -1)
+        if bool(game.get_legal_moves()) is True:
+            best_move = game.get_legal_moves()[0]
+        else:
+            best_move = (-1,-1)
 
-        #If the center is unique and available, pick it
-        if game.width % 2 == 1 and game.height % 2 == 1 and (int((game.width-1)/2), int((game.height-1)/2)) in game.get_legal_moves():
-            return (int((game.width-1)/2), int((game.height-1)/2))
-
-        # Specular movements: if player is player two and there is no unique center,
-        # apply specular movements
-        if game.move_count % 2 == 1:
-            if game.width % 2 == 0 or game.height % 2 == 0 :
-                specular_move = (game.width-1-game.get_player_location(game.get_opponent())[0], game.height-1-game.get_player_location(game.get_opponent())[1])
-                if specular_move in game.get_legal_moves():
-                    return specular_move
+        # #If the center is unique and available, pick it
+        # if game.width % 2 == 1 and game.height % 2 == 1 and (int((game.width-1)/2), int((game.height-1)/2)) in game.get_legal_moves():
+        #     return (int((game.width-1)/2), int((game.height-1)/2))
+        #
+        # # Specular movements: if player is player two and there is no unique center,
+        # # apply specular movements
+        # if game.move_count % 2 == 1:
+        #     if game.width % 2 == 0 or game.height % 2 == 0 :
+        #         specular_move = (game.width-1-game.get_player_location(game.get_opponent())[0], game.height-1-game.get_player_location(game.get_opponent())[1])
+        #         if specular_move in game.get_legal_moves():
+        #             return specular_move
 
         try:
             # The try/except block will automatically catch the exception
@@ -209,7 +212,7 @@ class MinimaxPlayer(IsolationPlayer):
         """
         return not bool(game.get_legal_moves())
 
-    def _min_value(self, game, depth):
+    def min_value(self, game, depth):
         """Returns the minimum value over all legal child nodes.
         Parameters
         ----------
@@ -229,14 +232,14 @@ class MinimaxPlayer(IsolationPlayer):
         value = self.score(game, self)
 
         #Player looses or limited search depth reached
-        if self._terminal_state(game) or depth == 0:
+        if self._terminal_state(game) or depth <= 0:
             return value
 
         for move in game.get_legal_moves():
-            value = min(value, self._max_value(game.forecast_move(move), depth - 1))
+            value = min(value, self.max_value(game.forecast_move(move), depth - 1))
         return value
 
-    def _max_value(self, game, depth):
+    def max_value(self, game, depth):
         """Returns the maximum value over all legal child nodes.
         Parameters
         ----------
@@ -257,11 +260,11 @@ class MinimaxPlayer(IsolationPlayer):
         value = self.score(game, self)
 
         #Player looses or limited search depth reached
-        if self._terminal_state(game) or depth == 0:
+        if self._terminal_state(game) or depth <= 0:
             return value
 
         for move in game.get_legal_moves():
-            value = max(value, self._min_value(game.forecast_move(move), depth - 1))
+            value = max(value, self.min_value(game.forecast_move(move), depth - 1))
         return value
 
     def minimax(self, game, depth):
@@ -300,10 +303,13 @@ class MinimaxPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         best_score = float("-inf")
-        best_move = (-1, -1)
+        if bool(game.get_legal_moves()) is True:
+            best_move = game.get_legal_moves()[0]
+        else:
+            best_move = (-1,-1)
 
         for move in game.get_legal_moves():
-            value = self._min_value(game.forecast_move(move), depth - 1)
+            value = self.min_value(game.forecast_move(move), depth - 1)
             if value > best_score:
                 best_score = value
                 best_move = move
@@ -345,19 +351,22 @@ class AlphaBetaPlayer(IsolationPlayer):
 
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
-        best_move = (-1, -1)
-
-        #If the center is available, pick it
-        if game.width % 2 == 1 and game.height % 2 == 1 and (int((game.width-1)/2), int((game.height-1)/2)) in game.get_legal_moves():
-            return (int((game.width-1)/2), int((game.height-1)/2))
-
-        # Specular movements: if player is player two and there is no unique center,
-        # apply specular movements
-        if game.move_count % 2 == 1:
-            if game.width % 2 == 0 or game.height % 2 == 0 :
-                specular_move = (game.width-1-game.get_player_location(game.get_opponent())[0], game.height-1-game.get_player_location(game.get_opponent())[1])
-                if specular_move in game.get_legal_moves():
-                    return specular_move
+        if bool(game.get_legal_moves()) is True:
+            best_move = game.get_legal_moves()[0]
+        else:
+            best_move = (-1,-1)
+        #
+        # #If the center is available, pick it
+        # if game.width % 2 == 1 and game.height % 2 == 1 and (int((game.width-1)/2), int((game.height-1)/2)) in game.get_legal_moves():
+        #     return (int((game.width-1)/2), int((game.height-1)/2))
+        #
+        # # Specular movements: if player is player two and there is no unique center,
+        # # apply specular movements
+        # if game.move_count % 2 == 1:
+        #     if game.width % 2 == 0 or game.height % 2 == 0 :
+        #         specular_move = (game.width-1-game.get_player_location(game.get_opponent())[0], game.height-1-game.get_player_location(game.get_opponent())[1])
+        #         if specular_move in game.get_legal_moves():
+        #             return specular_move
 
         try:
             # The try/except block will automatically catch the exception
@@ -393,7 +402,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         return not bool(game.get_legal_moves())
 
-    def _min_value(self, game, depth, alpha, beta):
+    def min_value(self, game, depth, alpha, beta):
         """Returns the minimum value over all legal child nodes.
         Parameters
         ----------
@@ -418,17 +427,17 @@ class AlphaBetaPlayer(IsolationPlayer):
         value = self.score(game, self)
 
         #Player looses or limited search depth reached
-        if self._terminal_state(game) or depth == 0:
+        if self._terminal_state(game) or depth <= 0:
             return value
 
         for move in game.get_legal_moves():
-            value = min(value, self._max_value(game.forecast_move(move), depth - 1, alpha, beta), alpha, beta)
+            value = min(value, self.max_value(game.forecast_move(move), depth - 1, alpha, beta), alpha, beta)
             if value <= alpha:
                 return value
             beta = min(beta, value)
         return value
 
-    def _max_value(self, game, depth, alpha, beta):
+    def max_value(self, game, depth, alpha, beta):
         """Returns the maximum value over all legal child nodes.
         Parameters
         ----------
@@ -453,11 +462,11 @@ class AlphaBetaPlayer(IsolationPlayer):
         value = self.score(game, self)
 
         #Player looses or limited search depth reached
-        if self._terminal_state(game) or depth == 0:
+        if self._terminal_state(game) or depth <= 0:
             return value
 
         for move in game.get_legal_moves():
-            value = max(value, self._min_value(game.forecast_move(move), depth - 1, alpha, beta), alpha, beta)
+            value = max(value, self.min_value(game.forecast_move(move), depth - 1, alpha, beta), alpha, beta)
             if value >= beta:
                 return value
             alpha = max(alpha, value)
@@ -503,10 +512,13 @@ class AlphaBetaPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         best_score = float("-inf")
-        best_move = (-1,-1)
+        if bool(game.get_legal_moves()) is True:
+            best_move = game.get_legal_moves()[0]
+        else:
+            best_move = (-1,-1)
 
         for move in game.get_legal_moves():
-            value = self._min_value(game.forecast_move(move), depth - 1, alpha, beta)
+            value = self.min_value(game.forecast_move(move), depth - 1, alpha, beta)
             if value > best_score:
                 best_score = value
                 best_move = move
