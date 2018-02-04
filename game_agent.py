@@ -9,8 +9,38 @@ class SearchTimeout(Exception):
     """Subclass base exception for code clarity. """
     pass
 
-
 def custom_score(game, player):
+    """Calculate the heuristic value of a game state from the point of view
+    of the given player.
+
+    This heuristic considers current player and opponent's number of movements,
+    priorizing attack by a factor 2.
+
+    This should be the best heuristic function for your project submission.
+    Note: this function should be called from within a Player instance as
+    `self.score()` -- you should not need to call this function directly.
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+    player : object
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+    Returns
+    -------
+    float
+        The heuristic value of the current game state to the specified player.
+    """
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    return float(len(game.get_legal_moves(player)) - 2 * len(game.get_legal_moves(game.get_opponent(player))))
+
+def custom_score_2(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
@@ -18,7 +48,6 @@ def custom_score(game, player):
     opponent's movements equivalently. It also considers relative distances,
     maximizing distance to the center and reducing distance to the corners
 
-    This should be the best heuristic function for your project submission.
     Note: this function should be called from within a Player instance as
     `self.score()` -- you should not need to call this function directly.
     Parameters
@@ -52,7 +81,7 @@ def custom_score(game, player):
 
     return float(len(game.get_legal_moves(player)) - len(game.get_legal_moves(game.get_opponent(player))) + distance_close_corner - distance_center)
 
-def custom_score_2(game, player):
+def custom_score_3(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
@@ -81,37 +110,6 @@ def custom_score_2(game, player):
         return float("inf")
 
     return float(2 * len(game.get_legal_moves(player)) - len(game.get_legal_moves(game.get_opponent(player))))
-
-def custom_score_3(game, player):
-    """Calculate the heuristic value of a game state from the point of view
-    of the given player.
-
-    This heuristic considers current player and opponent's number of movements,
-    priorizing attack by a factor 2.
-
-    Note: this function should be called from within a Player instance as
-    `self.score()` -- you should not need to call this function directly.
-    Parameters
-    ----------
-    game : `isolation.Board`
-        An instance of `isolation.Board` encoding the current state of the
-        game (e.g., player locations and blocked cells).
-    player : object
-        A player instance in the current game (i.e., an object corresponding to
-        one of the player objects `game.__player_1__` or `game.__player_2__`.)
-    Returns
-    -------
-    float
-        The heuristic value of the current game state to the specified player.
-    """
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-
-    return float(len(game.get_legal_moves(player)) - 2 * len(game.get_legal_moves(game.get_opponent(player))))
-
 
 class IsolationPlayer:
     """Base class for minimax and alphabeta agents -- this class is never
@@ -170,22 +168,10 @@ class MinimaxPlayer(IsolationPlayer):
 
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
-        if bool(game.get_legal_moves()) is True:
+        if bool(game.get_legal_moves()):
             best_move = game.get_legal_moves()[0]
         else:
             best_move = (-1,-1)
-
-        # #If the center is unique and available, pick it
-        # if game.width % 2 == 1 and game.height % 2 == 1 and (int((game.width-1)/2), int((game.height-1)/2)) in game.get_legal_moves():
-        #     return (int((game.width-1)/2), int((game.height-1)/2))
-        #
-        # # Specular movements: if player is player two and there is no unique center,
-        # # apply specular movements
-        # if game.move_count % 2 == 1:
-        #     if game.width % 2 == 0 or game.height % 2 == 0 :
-        #         specular_move = (game.width-1-game.get_player_location(game.get_opponent())[0], game.height-1-game.get_player_location(game.get_opponent())[1])
-        #         if specular_move in game.get_legal_moves():
-        #             return specular_move
 
         try:
             # The try/except block will automatically catch the exception
@@ -212,7 +198,7 @@ class MinimaxPlayer(IsolationPlayer):
         """
         return not bool(game.get_legal_moves())
 
-    def min_value(self, game, depth):
+    def _min_value(self, game, depth):
         """Returns the minimum value over all legal child nodes.
         Parameters
         ----------
@@ -229,17 +215,17 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        value = self.score(game, self)
+        value = float("inf")
 
         #Player looses or limited search depth reached
         if self._terminal_state(game) or depth <= 0:
-            return value
+            return self.score(game, self)
 
         for move in game.get_legal_moves():
-            value = min(value, self.max_value(game.forecast_move(move), depth - 1))
+            value = min(value, self._max_value(game.forecast_move(move), depth - 1))
         return value
 
-    def max_value(self, game, depth):
+    def _max_value(self, game, depth):
         """Returns the maximum value over all legal child nodes.
         Parameters
         ----------
@@ -257,14 +243,14 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        value = self.score(game, self)
+        value = float("-inf")
 
         #Player looses or limited search depth reached
         if self._terminal_state(game) or depth <= 0:
-            return value
+            return self.score(game, self)
 
         for move in game.get_legal_moves():
-            value = max(value, self.min_value(game.forecast_move(move), depth - 1))
+            value = max(value, self._min_value(game.forecast_move(move), depth - 1))
         return value
 
     def minimax(self, game, depth):
@@ -303,13 +289,13 @@ class MinimaxPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         best_score = float("-inf")
-        if bool(game.get_legal_moves()) is True:
+        if bool(game.get_legal_moves()):
             best_move = game.get_legal_moves()[0]
         else:
             best_move = (-1,-1)
 
         for move in game.get_legal_moves():
-            value = self.min_value(game.forecast_move(move), depth - 1)
+            value = self._min_value(game.forecast_move(move), depth - 1)
             if value > best_score:
                 best_score = value
                 best_move = move
@@ -351,22 +337,10 @@ class AlphaBetaPlayer(IsolationPlayer):
 
         # Initialize the best move so that this function returns something
         # in case the search fails due to timeout
-        if bool(game.get_legal_moves()) is True:
+        if bool(game.get_legal_moves()):
             best_move = game.get_legal_moves()[0]
         else:
             best_move = (-1,-1)
-        #
-        # #If the center is available, pick it
-        # if game.width % 2 == 1 and game.height % 2 == 1 and (int((game.width-1)/2), int((game.height-1)/2)) in game.get_legal_moves():
-        #     return (int((game.width-1)/2), int((game.height-1)/2))
-        #
-        # # Specular movements: if player is player two and there is no unique center,
-        # # apply specular movements
-        # if game.move_count % 2 == 1:
-        #     if game.width % 2 == 0 or game.height % 2 == 0 :
-        #         specular_move = (game.width-1-game.get_player_location(game.get_opponent())[0], game.height-1-game.get_player_location(game.get_opponent())[1])
-        #         if specular_move in game.get_legal_moves():
-        #             return specular_move
 
         try:
             # The try/except block will automatically catch the exception
@@ -402,7 +376,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         return not bool(game.get_legal_moves())
 
-    def min_value(self, game, depth, alpha, beta):
+    def _min_value(self, game, depth, alpha, beta):
         """Returns the minimum value over all legal child nodes.
         Parameters
         ----------
@@ -423,21 +397,20 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-
-        value = self.score(game, self)
+        value = float("inf")
 
         #Player looses or limited search depth reached
         if self._terminal_state(game) or depth <= 0:
-            return value
+            return self.score(game, self)
 
         for move in game.get_legal_moves():
-            value = min(value, self.max_value(game.forecast_move(move), depth - 1, alpha, beta), alpha, beta)
+            value = min(value, self._max_value(game.forecast_move(move), depth - 1, alpha, beta))
             if value <= alpha:
                 return value
             beta = min(beta, value)
         return value
 
-    def max_value(self, game, depth, alpha, beta):
+    def _max_value(self, game, depth, alpha, beta):
         """Returns the maximum value over all legal child nodes.
         Parameters
         ----------
@@ -459,14 +432,14 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        value = self.score(game, self)
+        value = float("-inf")
 
         #Player looses or limited search depth reached
         if self._terminal_state(game) or depth <= 0:
-            return value
+            return self.score(game, self)
 
         for move in game.get_legal_moves():
-            value = max(value, self.min_value(game.forecast_move(move), depth - 1, alpha, beta), alpha, beta)
+            value = max(value, self._min_value(game.forecast_move(move), depth - 1, alpha, beta))
             if value >= beta:
                 return value
             alpha = max(alpha, value)
@@ -512,14 +485,15 @@ class AlphaBetaPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         best_score = float("-inf")
-        if bool(game.get_legal_moves()) is True:
+        if bool(game.get_legal_moves()):
             best_move = game.get_legal_moves()[0]
         else:
             best_move = (-1,-1)
 
         for move in game.get_legal_moves():
-            value = self.min_value(game.forecast_move(move), depth - 1, alpha, beta)
+            value = self._min_value(game.forecast_move(move), depth - 1, alpha, beta)
             if value > best_score:
                 best_score = value
                 best_move = move
+            alpha = max(alpha, value)
         return best_move
